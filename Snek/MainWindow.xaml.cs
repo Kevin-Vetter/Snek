@@ -28,7 +28,6 @@ namespace Snek
         {
             InitializeComponent();
             gameTickTimer.Tick += GameTickTimer_Tick;
-
         }
 
         private void GameTickTimer_Tick(object sender, EventArgs e)
@@ -204,7 +203,7 @@ namespace Snek
             //... and then have it drawn!  
             DrawSnek();
             // We'll get to this later...  
-            CollisionCheck();          
+            CollisionCheck();
         }
         private void DrawSnek()
         {
