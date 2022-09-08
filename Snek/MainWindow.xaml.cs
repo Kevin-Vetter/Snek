@@ -38,7 +38,7 @@ namespace Snek
 
         private Random rnd = new Random();
 
-        private UIElement? snakeFood = null;
+        private UIElement? snekFood = null;
         private SolidColorBrush foodBrush = Brushes.Red;
 
         const int SnekSquareSize = 20;
@@ -54,6 +54,8 @@ namespace Snek
         public enum SnekDirection { Left, Right, Up, Down };
         private SnekDirection snekDirection = SnekDirection.Right;
         private int snekLength;
+
+        private int currentScore = 0;
 
 
         private void Window_ContentRendered(object sender, EventArgs e)
@@ -127,23 +129,34 @@ namespace Snek
                 }
             }
         }
-        private void DrawSnek()
+        private void StartNewGame()
         {
+            // Remove potential dead snake parts and leftover food...
             foreach (SnekPart bodyPart in snekParts)
             {
-                if (bodyPart.UiElement == null)
-                {
-                    bodyPart.UiElement = new Rectangle()
-                    {
-                        Width = SnekSquareSize,
-                        Height = SnekSquareSize,
-                        Fill = bodyPart.IsHead ? snekHeadBrush : snekBodyBrush
-                    };
-                    Arena.Children.Add(bodyPart.UiElement);
-                    Canvas.SetTop(bodyPart.UiElement, bodyPart.Position.Y);
-                    Canvas.SetLeft(bodyPart.UiElement, bodyPart.Position.X);
-                }
+                if (bodyPart.UiElement != null)
+                    Arena.Children.Remove(bodyPart.UiElement);
             }
+            snekParts.Clear();
+            if (snekFood != null)
+                Arena.Children.Remove(snekFood);
+
+            // Reset stuff
+            currentScore = 0;
+            snekLength = SnekStartLength;
+            snekDirection = SnekDirection.Right;
+            snekParts.Add(new SnekPart() { Position = new Point(SnekSquareSize * 5, SnekSquareSize * 5) });
+            gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnekStartSpeed);
+
+            // Draw the snake again and some new food...
+            DrawSnek();
+            DrawFood();
+
+            // Update status
+            UpdateGameHeader();
+
+            // Go!        
+            gameTickTimer.IsEnabled = true;
         }
         private void MoveSnek()
         {
@@ -191,18 +204,25 @@ namespace Snek
             //... and then have it drawn!  
             DrawSnek();
             // We'll get to this later...  
-            //DoCollisionCheck();          
+            CollisionCheck();          
         }
-        private void StartNewGame()
+        private void DrawSnek()
         {
-            snekLength = SnekStartLength;
-            snekDirection = SnekDirection.Right;
-            snekParts.Add(new SnekPart(){ Position = new Point(SnekSquareSize * 5, SnekSquareSize * 5) });
-            gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnekStartSpeed);
-
-            DrawSnek();
-            DrawFood();
-            gameTickTimer.IsEnabled = true;
+            foreach (SnekPart bodyPart in snekParts)
+            {
+                if (bodyPart.UiElement == null)
+                {
+                    bodyPart.UiElement = new Rectangle()
+                    {
+                        Width = SnekSquareSize,
+                        Height = SnekSquareSize,
+                        Fill = bodyPart.IsHead ? snekHeadBrush : snekBodyBrush
+                    };
+                    Arena.Children.Add(bodyPart.UiElement);
+                    Canvas.SetTop(bodyPart.UiElement, bodyPart.Position.Y);
+                    Canvas.SetLeft(bodyPart.UiElement, bodyPart.Position.X);
+                }
+            }
         }
         private Point GetNextFoodPosition()
         {
@@ -222,15 +242,56 @@ namespace Snek
         private void DrawFood()
         {
             Point foodPosition = GetNextFoodPosition();
-            snakeFood = new Ellipse()
+            snekFood = new Ellipse()
             {
                 Width = SnekSquareSize,
                 Height = SnekSquareSize,
                 Fill = foodBrush
             };
-            Arena.Children.Add(snakeFood);
-            Canvas.SetTop(snakeFood, foodPosition.Y);
-            Canvas.SetLeft(snakeFood, foodPosition.X);
+            Arena.Children.Add(snekFood);
+            Canvas.SetTop(snekFood, foodPosition.Y);
+            Canvas.SetLeft(snekFood, foodPosition.X);
+        }
+        private void CollisionCheck()
+        {
+            SnekPart snekHead = snekParts[snekParts.Count - 1];
+
+            if ((snekHead.Position.X == Canvas.GetLeft(snekFood)) && (snekHead.Position.Y == Canvas.GetTop(snekFood)))
+            {
+                EatFood();
+                return;
+            }
+
+            if ((snekHead.Position.Y < 0) || (snekHead.Position.Y >= Arena.ActualHeight) ||
+            (snekHead.Position.X < 0) || (snekHead.Position.X >= Arena.ActualWidth))
+            {
+                EndGame();
+            }
+
+            foreach (SnekPart snekBodyPart in snekParts.Take(snekParts.Count - 1))
+            {
+                if ((snekHead.Position.X == snekBodyPart.Position.X) && (snekHead.Position.Y == snekBodyPart.Position.Y))
+                    EndGame();
+            }
+        }
+        private void EatFood()
+        {
+            snekLength++;
+            currentScore++;
+            int timerInterval = Math.Max(SnekSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (currentScore * 2));
+            gameTickTimer.Interval = TimeSpan.FromMilliseconds(timerInterval);
+            Arena.Children.Remove(snekFood);
+            DrawFood();
+            UpdateGameHeader();
+        }
+        private void UpdateGameHeader()
+        {
+            this.Title = "Snek™ - Score: " + currentScore + " - Game speed: " + gameTickTimer.Interval.TotalMilliseconds;
+        }
+        private void EndGame()
+        {
+            gameTickTimer.IsEnabled = false;
+            MessageBox.Show("Oooops, you died!\n\nTo start a new game, just press the Space bar...", "SnakeWPF");
         }
     }
 
