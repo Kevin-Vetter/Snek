@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Snek"
         mc:Ignorable="d"
-        Title="Snek - 0 Points" SizeToContent="WidthAndHeight" ContentRendered="Window_ContentRendered"
+        Title="Snek - 0 Points" SizeToContent="WidthAndHeight" 
+        ContentRendered="Window_ContentRendered" KeyUp="Window_OnArrowClickUp"
         ResizeMode="NoResize">
     <Border BorderBrush="ForestGreen" BorderThickness="5">
         <Canvas Name="Arena" ClipToBounds="True" Width="400" Height="400">

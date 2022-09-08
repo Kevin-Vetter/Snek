@@ -59,7 +59,37 @@ namespace Snek
         private void Window_ContentRendered(object sender, EventArgs e)
         {
             DrawArena();
-            StartNewGame();
+            //StartNewGame();
+        }
+        private void Window_OnArrowClickUp(object sender, KeyEventArgs e)
+        {
+            SnekDirection originalSnakeDirection = snekDirection;
+
+            switch (e.Key)
+            {
+                case Key.Up:
+                    if (snekDirection != SnekDirection.Down)
+                        snekDirection = SnekDirection.Up;
+                    break;
+                case Key.Down:
+                    if (snekDirection != SnekDirection.Up)
+                        snekDirection = SnekDirection.Down;
+                    break;
+                case Key.Left:
+                    if (snekDirection != SnekDirection.Right)
+                        snekDirection = SnekDirection.Left;
+                    break;
+                case Key.Right:
+                    if (snekDirection != SnekDirection.Left)
+                        snekDirection = SnekDirection.Right;
+                    break;
+                case Key.Space:
+                    StartNewGame();
+                    break;
+            }
+
+            if (snekDirection != originalSnakeDirection)
+                MoveSnek();
         }
         private void DrawArena()
         {
