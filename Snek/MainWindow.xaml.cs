@@ -33,8 +33,13 @@ namespace Snek
 
         private void GameTickTimer_Tick(object sender, EventArgs e)
         {
-            MoveSnake();
+            MoveSnek();
         }
+
+        private Random rnd = new Random();
+
+        private UIElement? snakeFood = null;
+        private SolidColorBrush foodBrush = Brushes.Red;
 
         const int SnekSquareSize = 20;
         const int SnekStartLength = 3;
@@ -110,7 +115,7 @@ namespace Snek
                 }
             }
         }
-        private void MoveSnake()
+        private void MoveSnek()
         {
             // Remove the last part of the snake, in preparation of the new part added below  
             while (snekParts.Count >= snekLength)
@@ -166,7 +171,36 @@ namespace Snek
             gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnekStartSpeed);
 
             DrawSnek();
+            DrawFood();
             gameTickTimer.IsEnabled = true;
+        }
+        private Point GetNextFoodPosition()
+        {
+            int maxX = (int)(Arena.ActualWidth / SnekSquareSize);
+            int maxY = (int)(Arena.ActualHeight / SnekSquareSize);
+            int foodX = rnd.Next(0, maxX) * SnekSquareSize;
+            int foodY = rnd.Next(0, maxY) * SnekSquareSize;
+
+            foreach (SnekPart bodyPart in snekParts)
+            {
+                if ((bodyPart.Position.X == foodX) && (bodyPart.Position.Y == foodY))
+                    return GetNextFoodPosition();
+            }
+
+            return new Point(foodX, foodY);
+        }
+        private void DrawFood()
+        {
+            Point foodPosition = GetNextFoodPosition();
+            snakeFood = new Ellipse()
+            {
+                Width = SnekSquareSize,
+                Height = SnekSquareSize,
+                Fill = foodBrush
+            };
+            Arena.Children.Add(snakeFood);
+            Canvas.SetTop(snakeFood, foodPosition.Y);
+            Canvas.SetLeft(snakeFood, foodPosition.X);
         }
     }
 
