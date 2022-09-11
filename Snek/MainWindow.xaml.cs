@@ -56,7 +56,15 @@ namespace Snek
 
         private int currentScore = 0;
 
-
+       
+        private void BtnClose_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            this.DragMove();
+        }
         private void Window_ContentRendered(object sender, EventArgs e)
         {
             DrawArena();
@@ -68,19 +76,19 @@ namespace Snek
 
             switch (e.Key)
             {
-                case Key.Up:
+                case Key.Up or Key.W:
                     if (snekDirection != SnekDirection.Down)
                         snekDirection = SnekDirection.Up;
                     break;
-                case Key.Down:
+                case Key.Down or Key.S:
                     if (snekDirection != SnekDirection.Up)
                         snekDirection = SnekDirection.Down;
                     break;
-                case Key.Left:
+                case Key.Left or Key.A:
                     if (snekDirection != SnekDirection.Right)
                         snekDirection = SnekDirection.Left;
                     break;
-                case Key.Right:
+                case Key.Right or Key.D:
                     if (snekDirection != SnekDirection.Left)
                         snekDirection = SnekDirection.Right;
                     break;
@@ -285,7 +293,8 @@ namespace Snek
         }
         private void UpdateGameHeader()
         {
-            this.Title = "Snek™ - Score: " + currentScore + " - Game speed: " + gameTickTimer.Interval.TotalMilliseconds;
+            this.tbStatusScore.Text = currentScore.ToString();
+            this.tbStatusSpeed.Text = gameTickTimer.Interval.TotalMilliseconds.ToString();
         }
         private void EndGame()
         {
