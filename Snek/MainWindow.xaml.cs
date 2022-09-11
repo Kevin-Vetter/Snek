@@ -1,10 +1,13 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
 using System.Windows.Media.Imaging;
 using System.Collections.Generic;
 using System.Windows.Navigation;
 using System.Windows.Documents;
 using System.Windows.Threading;
+using System.Xml.Serialization;
 using System.Windows.Controls;
+using System.Speech.Synthesis;
 using static Snek.MainWindow;
 using System.Threading.Tasks;
 using System.Windows.Shapes;
@@ -13,7 +16,9 @@ using System.Windows.Input;
 using System.Windows.Data;
 using System.Windows;
 using System.Linq;
+using System.IO;
 using System.Text;
+using System.IO;
 using System;
 
 namespace Snek
@@ -23,17 +28,22 @@ namespace Snek
     /// </summary>
     public partial class MainWindow : Window
     {
+        private SpeechSynthesizer speechSynthesizer = new SpeechSynthesizer();
+
         private DispatcherTimer gameTickTimer = new DispatcherTimer();
         public MainWindow()
         {
             InitializeComponent();
             gameTickTimer.Tick += GameTickTimer_Tick;
+            LoadHighscoreList();
         }
 
         private void GameTickTimer_Tick(object sender, EventArgs e)
         {
             MoveSnek();
         }
+
+        const int MaxHighscoreListEntryCount = 5;
 
         private Random rnd = new Random();
 
@@ -56,19 +66,43 @@ namespace Snek
 
         private int currentScore = 0;
 
-       
-        private void BtnClose_Click(object sender, RoutedEventArgs e)
+        public ObservableCollection<SnakeHighscore> HighscoreList
         {
-            this.Close();
+            get; set;
+        } = new ObservableCollection<SnakeHighscore>();
+        private void BtnAddToHighscoreList_Click(object sender, RoutedEventArgs e)
+        {
+            int newIndex = 0;
+            // Where should the new entry be inserted?
+            if ((this.HighscoreList.Count > 0) && (currentScore < this.HighscoreList.Max(x => x.Score)))
+            {
+                SnakeHighscore justAbove = this.HighscoreList.OrderByDescending(x => x.Score).First(x => x.Score >= currentScore);
+                if (justAbove != null)
+                    newIndex = this.HighscoreList.IndexOf(justAbove) + 1;
+            }
+            // Create & insert the new entry
+            this.HighscoreList.Insert(newIndex, new SnakeHighscore()
+            {
+                PlayerName = txtPlayerName.Text,
+                Score = currentScore
+            });
+            // Make sure that the amount of entries does not exceed the maximum
+            while (this.HighscoreList.Count > MaxHighscoreListEntryCount)
+                this.HighscoreList.RemoveAt(MaxHighscoreListEntryCount);
+
+            SaveHighscoreList();
+
+            bdrNewHighscore.Visibility = Visibility.Collapsed;
+            bdrHighscoreList.Visibility = Visibility.Visible;
+        }
+        private void BtnShowHighscoreList_Click(object sender, RoutedEventArgs e)
+        {
+            bdrWelcomeMessage.Visibility = Visibility.Collapsed;
+            bdrHighscoreList.Visibility = Visibility.Visible;
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             this.DragMove();
-        }
-        private void Window_ContentRendered(object sender, EventArgs e)
-        {
-            DrawArena();
-            //StartNewGame();
         }
         private void Window_OnArrowClickUp(object sender, KeyEventArgs e)
         {
@@ -99,6 +133,46 @@ namespace Snek
 
             if (snekDirection != originalSnakeDirection)
                 MoveSnek();
+        }
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            DrawArena();
+            //StartNewGame();
+        }
+        private void BtnClose_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+        private void SpeakEndOfGameInfo(bool isNewHighscore)
+        {
+            PromptBuilder promptBuilder = new PromptBuilder();
+
+            promptBuilder.StartStyle(new PromptStyle()
+            {
+                Emphasis = PromptEmphasis.Reduced,
+                Rate = PromptRate.Slow,
+                Volume = PromptVolume.ExtraLoud
+            });
+            promptBuilder.AppendText("oh no");
+            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));
+            promptBuilder.AppendText("you died");
+            promptBuilder.EndStyle();
+
+            if (isNewHighscore)
+            {
+                promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(500));
+                promptBuilder.StartStyle(new PromptStyle()
+                {
+                    Emphasis = PromptEmphasis.Moderate,
+                    Rate = PromptRate.Medium,
+                    Volume = PromptVolume.Medium
+                });
+                promptBuilder.AppendText("new high score:");
+                promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));
+                promptBuilder.AppendTextWithHint(currentScore.ToString(), SayAs.NumberCardinal);
+                promptBuilder.EndStyle();
+            }
+            speechSynthesizer.SpeakAsync(promptBuilder);
         }
         private void DrawArena()
         {
@@ -138,6 +212,10 @@ namespace Snek
         }
         private void StartNewGame()
         {
+            bdrWelcomeMessage.Visibility = Visibility.Collapsed;
+            bdrHighscoreList.Visibility = Visibility.Collapsed;
+            bdrEndOfGame.Visibility = Visibility.Collapsed;
+
             // Remove potential dead snake parts and leftover food...
             foreach (SnekPart bodyPart in snekParts)
             {
@@ -291,15 +369,52 @@ namespace Snek
             DrawFood();
             UpdateGameHeader();
         }
+        private void SaveHighscoreList()
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<SnakeHighscore>));
+            using (Stream writer = new FileStream("snake_highscorelist.xml", FileMode.Create))
+            {
+                serializer.Serialize(writer, this.HighscoreList);
+            }
+        }
         private void UpdateGameHeader()
         {
             this.tbStatusScore.Text = currentScore.ToString();
             this.tbStatusSpeed.Text = gameTickTimer.Interval.TotalMilliseconds.ToString();
         }
+        private void LoadHighscoreList()
+        {
+            if (File.Exists("snake_highscorelist.xml"))
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(List<SnakeHighscore>));
+                using (Stream reader = new FileStream("snake_highscorelist.xml", FileMode.Open))
+                {
+                    List<SnakeHighscore> tempList = (List<SnakeHighscore>)serializer.Deserialize(reader);
+                    this.HighscoreList.Clear();
+                    foreach (var item in tempList.OrderByDescending(x => x.Score))
+                        this.HighscoreList.Add(item);
+                }
+            }
+        }
         private void EndGame()
         {
+            bool isNewHighscore = false;
+            if (currentScore > 0)
+            {
+                int lowestHighscore = (this.HighscoreList.Count > 0 ? this.HighscoreList.Min(x => x.Score) : 0);
+                if ((currentScore > lowestHighscore) || (this.HighscoreList.Count < MaxHighscoreListEntryCount))
+                {
+                    bdrNewHighscore.Visibility = Visibility.Visible;
+                    txtPlayerName.Focus();
+                    isNewHighscore = true;
+                }
+            }
+            if (!isNewHighscore)
+            {
+                tbFinalScore.Text = currentScore.ToString();
+                bdrEndOfGame.Visibility = Visibility.Visible;
+            }
             gameTickTimer.IsEnabled = false;
-            MessageBox.Show("Oooops, you died!\n\nTo start a new game, just press the Space bar...", "SnakeWPF");
         }
     }
 
@@ -309,4 +424,11 @@ namespace Snek
         public Point Position { get; set; }
         public bool IsHead { get; set; }
     }
+}
+
+public class SnakeHighscore
+{
+    public string PlayerName { get; set; }
+
+    public int Score { get; set; }
 }
