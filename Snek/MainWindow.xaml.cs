@@ -20,6 +20,7 @@ using System.IO;
 using System.Text;
 using System.IO;
 using System;
+using System.Media;
 
 namespace Snek
 {
@@ -34,6 +35,8 @@ namespace Snek
         public MainWindow()
         {
             InitializeComponent();
+            this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            this.DataContext = this;
             gameTickTimer.Tick += GameTickTimer_Tick;
             LoadHighscoreList();
         }
@@ -131,7 +134,7 @@ namespace Snek
                     break;
             }
 
-            if (snekDirection != originalSnakeDirection)
+            if (snekDirection != originalSnakeDirection && gameTickTimer.IsEnabled)
                 MoveSnek();
         }
         private void Window_ContentRendered(object sender, EventArgs e)
@@ -145,18 +148,9 @@ namespace Snek
         }
         private void SpeakEndOfGameInfo(bool isNewHighscore)
         {
+            LoadSound("GameOver.wav");
+            PlaySound();
             PromptBuilder promptBuilder = new PromptBuilder();
-
-            promptBuilder.StartStyle(new PromptStyle()
-            {
-                Emphasis = PromptEmphasis.Reduced,
-                Rate = PromptRate.Slow,
-                Volume = PromptVolume.ExtraLoud
-            });
-            promptBuilder.AppendText("oh no");
-            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));
-            promptBuilder.AppendText("you died");
-            promptBuilder.EndStyle();
 
             if (isNewHighscore)
             {
@@ -171,8 +165,8 @@ namespace Snek
                 promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));
                 promptBuilder.AppendTextWithHint(currentScore.ToString(), SayAs.NumberCardinal);
                 promptBuilder.EndStyle();
+                speechSynthesizer.SpeakAsync(promptBuilder);
             }
-            speechSynthesizer.SpeakAsync(promptBuilder);
         }
         private void DrawArena()
         {
@@ -212,6 +206,10 @@ namespace Snek
         }
         private void StartNewGame()
         {
+            LoadSound("GameStart.wav");
+            PlaySound();
+            LoadSound("Eat.wav");
+
             bdrWelcomeMessage.Visibility = Visibility.Collapsed;
             bdrHighscoreList.Visibility = Visibility.Collapsed;
             bdrEndOfGame.Visibility = Visibility.Collapsed;
@@ -361,6 +359,7 @@ namespace Snek
         }
         private void EatFood()
         {
+            PlaySound();
             snekLength++;
             currentScore++;
             int timerInterval = Math.Max(SnekSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (currentScore * 2));
@@ -415,6 +414,21 @@ namespace Snek
                 bdrEndOfGame.Visibility = Visibility.Visible;
             }
             gameTickTimer.IsEnabled = false;
+            SpeakEndOfGameInfo(isNewHighscore);
+        }
+
+        SoundPlayer player = new SoundPlayer();
+
+        public void LoadSound(string path)
+        {
+
+            player.SoundLocation = path;
+            player.Load();
+        }
+
+        public async void PlaySound()
+        {
+            player.Play();
         }
     }
 

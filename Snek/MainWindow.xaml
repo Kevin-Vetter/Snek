@@ -3,22 +3,23 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Snek" xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        xmlns:local="clr-namespace:Snek" 
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         mc:Ignorable="d"
         Title="Snek™ - 0 Points" 
         SizeToContent="WidthAndHeight" 
-        Icon="C:\Users\Kevin\Source\Repos\Snek\Snek\Icon\Icon-V8.png"
+        Icon="C:\Users\kevin\source\repos\Snek\Snek\Icon\Icon-V8.png"
         ContentRendered="Window_ContentRendered" 
         KeyUp="Window_OnArrowClickUp"
         ResizeMode="NoResize"
         WindowStyle="None"
         MouseDown="Window_MouseDown">
     <Window.Resources>
-        <CollectionViewSource Source="{Binding ElementName=window, Path=HighscoreList}" x:Key="HighScoreListViewSource">
-            <CollectionViewSource.SortDescriptions>
-                <scm:SortDescription Direction="Descending" PropertyName="Score" />
-            </CollectionViewSource.SortDescriptions>
-        </CollectionViewSource>
+    <CollectionViewSource Source="{Binding Path=HighscoreList}" x:Key="HighScoreListViewSource">
+        <CollectionViewSource.SortDescriptions>
+            <scm:SortDescription Direction="Descending" PropertyName="Score" />
+        </CollectionViewSource.SortDescriptions>
+    </CollectionViewSource>
     </Window.Resources>
 
     <DockPanel Background="ForestGreen">
