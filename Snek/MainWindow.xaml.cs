@@ -69,22 +69,22 @@ namespace Snek
 
         private int currentScore = 0;
 
-        public ObservableCollection<SnakeHighscore> HighscoreList
+        public ObservableCollection<SnekHighscore> HighscoreList
         {
             get; set;
-        } = new ObservableCollection<SnakeHighscore>();
+        } = new ObservableCollection<SnekHighscore>();
         private void BtnAddToHighscoreList_Click(object sender, RoutedEventArgs e)
         {
             int newIndex = 0;
             // Where should the new entry be inserted?
             if ((this.HighscoreList.Count > 0) && (currentScore < this.HighscoreList.Max(x => x.Score)))
             {
-                SnakeHighscore justAbove = this.HighscoreList.OrderByDescending(x => x.Score).First(x => x.Score >= currentScore);
+                SnekHighscore justAbove = this.HighscoreList.OrderByDescending(x => x.Score).First(x => x.Score >= currentScore);
                 if (justAbove != null)
                     newIndex = this.HighscoreList.IndexOf(justAbove) + 1;
             }
             // Create & insert the new entry
-            this.HighscoreList.Insert(newIndex, new SnakeHighscore()
+            this.HighscoreList.Insert(newIndex, new SnekHighscore()
             {
                 PlayerName = txtPlayerName.Text,
                 Score = currentScore
@@ -107,9 +107,9 @@ namespace Snek
         {
             this.DragMove();
         }
-        private void Window_OnArrowClickUp(object sender, KeyEventArgs e)
+        private void Window_OnKeyClickUp(object sender, KeyEventArgs e)
         {
-            SnekDirection originalSnakeDirection = snekDirection;
+            SnekDirection originalsnekDirection = snekDirection;
 
             switch (e.Key)
             {
@@ -130,11 +130,14 @@ namespace Snek
                         snekDirection = SnekDirection.Right;
                     break;
                 case Key.Space:
-                    StartNewGame();
+                    if (!txtPlayerName.IsFocused)
+                    {
+                        StartNewGame();
+                    }
                     break;
             }
 
-            if (snekDirection != originalSnakeDirection && gameTickTimer.IsEnabled)
+            if (snekDirection != originalsnekDirection && gameTickTimer.IsEnabled)
                 MoveSnek();
         }
         private void Window_ContentRendered(object sender, EventArgs e)
@@ -145,28 +148,6 @@ namespace Snek
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
-        }
-        private void SpeakEndOfGameInfo(bool isNewHighscore)
-        {
-            LoadSound("GameOver.wav");
-            PlaySound();
-            PromptBuilder promptBuilder = new PromptBuilder();
-
-            if (isNewHighscore)
-            {
-                promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(500));
-                promptBuilder.StartStyle(new PromptStyle()
-                {
-                    Emphasis = PromptEmphasis.Moderate,
-                    Rate = PromptRate.Medium,
-                    Volume = PromptVolume.Medium
-                });
-                promptBuilder.AppendText("new high score:");
-                promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));
-                promptBuilder.AppendTextWithHint(currentScore.ToString(), SayAs.NumberCardinal);
-                promptBuilder.EndStyle();
-                speechSynthesizer.SpeakAsync(promptBuilder);
-            }
         }
         private void DrawArena()
         {
@@ -206,15 +187,15 @@ namespace Snek
         }
         private void StartNewGame()
         {
-            LoadSound("GameStart.wav");
+            LoadSound("GameStartSoundEffect.wav");
             PlaySound();
-            LoadSound("Eat.wav");
+            LoadSound("EatSoundEffect.wav");
 
             bdrWelcomeMessage.Visibility = Visibility.Collapsed;
             bdrHighscoreList.Visibility = Visibility.Collapsed;
             bdrEndOfGame.Visibility = Visibility.Collapsed;
 
-            // Remove potential dead snake parts and leftover food...
+            // Remove potential dead snek parts and leftover food...
             foreach (SnekPart bodyPart in snekParts)
             {
                 if (bodyPart.UiElement != null)
@@ -231,7 +212,7 @@ namespace Snek
             snekParts.Add(new SnekPart() { Position = new Point(SnekSquareSize * 5, SnekSquareSize * 5) });
             gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnekStartSpeed);
 
-            // Draw the snake again and some new food...
+            // Draw the snek again and some new food...
             DrawSnek();
             DrawFood();
 
@@ -243,13 +224,13 @@ namespace Snek
         }
         private void MoveSnek()
         {
-            // Remove the last part of the snake, in preparation of the new part added below  
+            // Remove the last part of the snek, in preparation of the new part added below  
             while (snekParts.Count >= snekLength)
             {
                 Arena.Children.Remove(snekParts[0].UiElement);
                 snekParts.RemoveAt(0);
             }
-            // Next up, we'll add a new element to the snake, which will be the (new) head  
+            // Next up, we'll add a new element to the snek, which will be the (new) head  
             // Therefore, we mark all existing parts as non-head (body) elements and then  
             // we make sure that they use the body brush  
             foreach (SnekPart bodyPart in snekParts)
@@ -258,7 +239,7 @@ namespace Snek
                 bodyPart.IsHead = false;
             }
 
-            // Determine in which direction to expand the snake, based on the current direction  
+            // Determine in which direction to expand the snek, based on the current direction  
             SnekPart snekHead = snekParts[snekParts.Count - 1];
             double nextX = snekHead.Position.X;
             double nextY = snekHead.Position.Y;
@@ -278,7 +259,7 @@ namespace Snek
                     break;
             }
 
-            // Now add the new head part to our list of snake parts...  
+            // Now add the new head part to our list of snek parts...  
             snekParts.Add(new SnekPart()
             {
                 Position = new Point(nextX, nextY),
@@ -370,8 +351,8 @@ namespace Snek
         }
         private void SaveHighscoreList()
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<SnakeHighscore>));
-            using (Stream writer = new FileStream("snake_highscorelist.xml", FileMode.Create))
+            XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<SnekHighscore>));
+            using (Stream writer = new FileStream("snek_highscorelist.xml", FileMode.Create))
             {
                 serializer.Serialize(writer, this.HighscoreList);
             }
@@ -383,12 +364,12 @@ namespace Snek
         }
         private void LoadHighscoreList()
         {
-            if (File.Exists("snake_highscorelist.xml"))
+            if (File.Exists("snek_highscorelist.xml"))
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(List<SnakeHighscore>));
-                using (Stream reader = new FileStream("snake_highscorelist.xml", FileMode.Open))
+                XmlSerializer serializer = new XmlSerializer(typeof(List<SnekHighscore>));
+                using (Stream reader = new FileStream("snek_highscorelist.xml", FileMode.Open))
                 {
-                    List<SnakeHighscore> tempList = (List<SnakeHighscore>)serializer.Deserialize(reader);
+                    List<SnekHighscore> tempList = (List<SnekHighscore>)serializer.Deserialize(reader);
                     this.HighscoreList.Clear();
                     foreach (var item in tempList.OrderByDescending(x => x.Score))
                         this.HighscoreList.Add(item);
@@ -397,11 +378,12 @@ namespace Snek
         }
         private void EndGame()
         {
+            gameTickTimer.IsEnabled = false;
             bool isNewHighscore = false;
             if (currentScore > 0)
             {
-                int lowestHighscore = (this.HighscoreList.Count > 0 ? this.HighscoreList.Min(x => x.Score) : 0);
-                if ((currentScore > lowestHighscore) || (this.HighscoreList.Count < MaxHighscoreListEntryCount))
+                int lowestHighscore = (this.HighscoreList.Count > 0 ? this.HighscoreList.Min(x =>x.Score) : 0);
+                if ((currentScore >= lowestHighscore) || (this.HighscoreList.Count < MaxHighscoreListEntryCount))
                 {
                     bdrNewHighscore.Visibility = Visibility.Visible;
                     txtPlayerName.Focus();
@@ -413,8 +395,8 @@ namespace Snek
                 tbFinalScore.Text = currentScore.ToString();
                 bdrEndOfGame.Visibility = Visibility.Visible;
             }
-            gameTickTimer.IsEnabled = false;
-            SpeakEndOfGameInfo(isNewHighscore);
+            LoadSound("GameOverSoundEffect.wav");
+            PlaySound();
         }
 
         SoundPlayer player = new SoundPlayer();
@@ -440,7 +422,7 @@ namespace Snek
     }
 }
 
-public class SnakeHighscore
+public class SnekHighscore
 {
     public string PlayerName { get; set; }
 

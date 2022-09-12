@@ -10,7 +10,7 @@
         SizeToContent="WidthAndHeight" 
         Icon="C:\Users\kevin\source\repos\Snek\Snek\Icon\Icon-V8.png"
         ContentRendered="Window_ContentRendered" 
-        KeyUp="Window_OnArrowClickUp"
+        KeyUp="Window_OnKeyClickUp"
         ResizeMode="NoResize"
         WindowStyle="None"
         MouseDown="Window_MouseDown">
@@ -51,12 +51,12 @@
         </Grid>
         <Border BorderBrush="ForestGreen" BorderThickness="5">
             <Canvas Name="Arena" ClipToBounds="True" Width="400" Height="400">
-                <Border BorderBrush="Silver" BorderThickness="2" Width="300" Height="300" Canvas.Left="50" Canvas.Top="50" Name="bdrWelcomeMessage" Panel.ZIndex="1">
+                <Border BorderBrush="Silver" BorderThickness="2" Width="300" Height="320" Canvas.Left="50" Canvas.Top="50" Name="bdrWelcomeMessage" Panel.ZIndex="1">
                     <StackPanel Orientation="Vertical" Background="AliceBlue">
-                        <TextBlock FontWeight="Bold" FontSize="50" HorizontalAlignment="Center" Margin="0,20,0,0">SnakeWPF</TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="20" FontSize="16">Use the Arrow keys to control the green snake. Make it eat the red apples, but be sure not to crash into the walls or the tail of the snake!</TextBlock>
+                        <TextBlock FontWeight="Bold" FontSize="50" HorizontalAlignment="Center" Margin="0,20,0,0">Snek™</TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20" FontSize="16">Use WASD or The Arrow keys to control the green snek™. Make it eat the red apples, but be sure not to crash into the walls or the tail of the snek™!</TextBlock>
                         <TextBlock FontWeight="Bold" HorizontalAlignment="Center" FontSize="24" Foreground="Maroon">Press SPACE to start!</TextBlock>
-                        <Button Margin="20" Name="btnShowHighscoreList" Click="BtnShowHighscoreList_Click" HorizontalAlignment="Center" Padding="10,3">Show High Score List...</Button>
+                        <Button Margin="20" Name="btnShowHighscoreList" Click="BtnShowHighscoreList_Click" HorizontalAlignment="Center" Padding="10,3">Leaderboard</Button>
                     </StackPanel>
                 </Border>
                 <Border BorderBrush="Silver" BorderThickness="2" Width="300" Height="300" Canvas.Left="50" Canvas.Top="50" Name="bdrHighscoreList" Panel.ZIndex="1" Visibility="Collapsed">
@@ -80,7 +80,7 @@
                     <StackPanel Orientation="Vertical" Background="AliceBlue">
                         <TextBlock HorizontalAlignment="Center" FontSize="34" FontWeight="Bold" Margin="20">New Highscore!</TextBlock>
                         <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" FontSize="16">  
-        Congratulations - you made it into the SnakeWPF highscore list! Please enter your name below...
+        Congratulations - you made it into the snek highscore list! Please enter your name below...
                         </TextBlock>
                         <TextBox Name="txtPlayerName" FontSize="28" FontWeight="Bold" MaxLength="8" Margin="20" HorizontalContentAlignment="Center"></TextBox>
                         <Button Name="btnAddToHighscoreList" FontSize="16" HorizontalAlignment="Center" Click="BtnAddToHighscoreList_Click" Padding="10,5">Add to highscore list</Button>

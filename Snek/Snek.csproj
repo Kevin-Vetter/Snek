@@ -16,13 +16,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Eat.wav">
+    <None Update="EatSoundEffect.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GameOver.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="GameStart.wav">
+    <None Update="GameOverSoundEffect.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GameStartSoundEffect.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Icon\Icon-V8.png">
