@@ -44,5 +44,7 @@ namespace Snek.DAL
                 }
             }
         }
+
+        public void ClearHighscoreList() => _highScoreList.Clear();
     }
 }

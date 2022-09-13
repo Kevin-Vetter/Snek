@@ -9,7 +9,7 @@ using System.Windows.Input;
 using System.Windows;
 using System.Media;
 using System.Linq;
-using System; 
+using System;
 #endregion
 
 namespace Snek
@@ -33,29 +33,29 @@ namespace Snek
         }
 
         #region Fields
-        private Random _rnd = new Random();
-        private UIElement? _snekFood = null;
-        private SolidColorBrush _foodBrush = Brushes.Red;
-        private SolidColorBrush _snekBodyBrush = Brushes.Green;
+        private SnekDirection _snekDirection = SnekDirection.Right;
         private SolidColorBrush _snekHeadBrush = Brushes.DarkGreen;
         private List<SnekPart> _snekParts = new List<SnekPart>();
-        private SnekDirection _snekDirection = SnekDirection.Right;
-        private int _snekLength;
+        private SolidColorBrush _snekBodyBrush = Brushes.Green;
+        private SolidColorBrush _foodBrush = Brushes.Red;
+        private UIElement? _snekFood = null;
+        private int _snekSpeedThreshold = 100;
+        private Random _rnd = new Random();
+        private int _snekStartSpeed = 200;
         private int _currentScore = 0;
+        private int _squareSize = 20;
         private bool _gameRunning;
+        private int _snekLength;
         #endregion
 
         #region Const
         const int MaxHighscoreListEntryCount = 5;
-        const int SnekSquareSize = 20;
         const int SnekStartLength = 3;
-        const int SnekStartSpeed = 200;
-        const int SnekSpeedThreshold = 100; 
         #endregion
 
         public enum SnekDirection { Left, Right, Up, Down };
         public ObservableCollection<SnekHighScore> HighScoreList { get; set; }
-        
+
         #region Events
         private void BtnAddToHighscoreList_Click(object sender, RoutedEventArgs e)
         {
@@ -82,16 +82,49 @@ namespace Snek
 
             bdrNewHighscore.Visibility = Visibility.Collapsed;
             bdrHighscoreList.Visibility = Visibility.Visible;
+            gameMode.Visibility = Visibility.Visible;
         }
         private void BtnShowHighscoreList_Click(object sender, RoutedEventArgs e)
         {
-            bdrWelcomeMessage.Visibility = Visibility.Collapsed;
             bdrHighscoreList.Visibility = Visibility.Visible;
         }
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        private void BtnShowControls_Click(object sender, RoutedEventArgs e)
         {
-            this.DragMove();
+            MessageBox.Show("Use WASD or The Arrow keys to control the green snek™.\nMake it eat the red apples, but be sure not to crash into the walls or the tail of the snek™!", "How to play snek™", MessageBoxButton.OK, MessageBoxImage.Information);
         }
+        private void BtnChooseGameMode_Click(object sender, RoutedEventArgs e)
+        {
+            menu.Visibility = Visibility.Collapsed;
+            gameMode.Visibility = Visibility.Visible;
+        }
+        public void BtnDifficultyEasy_Click(object sender, RoutedEventArgs e)
+        {
+            _snekSpeedThreshold = 150;
+            _squareSize = 40;
+            _snekStartSpeed = 300;
+            DrawArena();
+            StartNewGame();
+        }
+        public void BtnDifficultyNormal_Click(object sender, RoutedEventArgs e)
+        {
+            _snekSpeedThreshold = 100;
+            _squareSize = 20;
+            _snekStartSpeed = 200;
+            DrawArena();
+            StartNewGame();
+        }
+        public void BtnDifficultyHard_Click(object sender, RoutedEventArgs e)
+        {
+            _snekSpeedThreshold = 50;
+            _squareSize = 10;
+            _snekStartSpeed = 100;
+            DrawArena();
+            StartNewGame();
+        }
+        public void BtnClearLeaderboard_Click(object sender, RoutedEventArgs e) => dataStream.ClearHighscoreList();
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e) => this.DragMove();
+        private void Window_ContentRendered(object sender, EventArgs e) => DrawArena();
+      
         private void Window_OnKeyClickUp(object sender, KeyEventArgs e)
         {
             SnekDirection originalsnekDirection = _snekDirection;
@@ -118,7 +151,7 @@ namespace Snek
                     PauseGame();
                     break;
                 case Key.Space:
-                    if (!txtPlayerName.IsFocused)
+                    if (gameTickTimer.IsEnabled)
                     {
                         StartNewGame();
                     }
@@ -128,19 +161,11 @@ namespace Snek
             if (_snekDirection != originalsnekDirection && gameTickTimer.IsEnabled)
                 MoveSnek();
         }
-        private void Window_ContentRendered(object sender, EventArgs e)
-        {
-            DrawArena();
-            //StartNewGame();
-        }
-        private void BtnClose_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
-        private void GameTickTimer_Tick(object sender, EventArgs e)
-        {
-            MoveSnek();
-        }
+        private void BtnClose_Click(object sender, RoutedEventArgs e) => this.Close();
+
+        private void btnCloseLeaderboard_Click(object sender, RoutedEventArgs e) => bdrHighscoreList.Visibility = Visibility.Collapsed;
+        private void GameTickTimer_Tick(object sender, EventArgs e) => MoveSnek();
+
         #endregion
 
         #region Draw
@@ -155,8 +180,8 @@ namespace Snek
             {
                 Rectangle rectangle = new()
                 {
-                    Width = SnekSquareSize,
-                    Height = SnekSquareSize,
+                    Width = _squareSize,
+                    Height = _squareSize,
                     Fill = nextIsOdd ? Brushes.YellowGreen : Brushes.OliveDrab
                 };
 
@@ -165,11 +190,11 @@ namespace Snek
                 Canvas.SetLeft(rectangle, nextX);
 
                 nextIsOdd = !nextIsOdd;
-                nextX += SnekSquareSize;
+                nextX += _squareSize;
                 if (nextX >= Arena.ActualWidth)
                 {
                     nextX = 0;
-                    nextY += SnekSquareSize;
+                    nextY += _squareSize;
                     rowCounter++;
                     nextIsOdd = rowCounter % 2 != 0;
                 }
@@ -185,8 +210,8 @@ namespace Snek
             Point foodPosition = GetNextFoodPosition();
             _snekFood = new Ellipse()
             {
-                Width = SnekSquareSize,
-                Height = SnekSquareSize,
+                Width = _squareSize,
+                Height = _squareSize,
                 Fill = _foodBrush
             };
             Arena.Children.Add(_snekFood);
@@ -201,8 +226,8 @@ namespace Snek
                 {
                     bodyPart.UiElement = new Rectangle()
                     {
-                        Width = SnekSquareSize,
-                        Height = SnekSquareSize,
+                        Width = _squareSize,
+                        Height = _squareSize,
                         Fill = bodyPart.IsHead ? _snekHeadBrush : _snekBodyBrush
                     };
                     Arena.Children.Add(bodyPart.UiElement);
@@ -216,10 +241,10 @@ namespace Snek
         #region MISC
         private Point GetNextFoodPosition()
         {
-            int maxX = (int)(Arena.ActualWidth / SnekSquareSize);
-            int maxY = (int)(Arena.ActualHeight / SnekSquareSize);
-            int foodX = _rnd.Next(0, maxX) * SnekSquareSize;
-            int foodY = _rnd.Next(0, maxY) * SnekSquareSize;
+            int maxX = (int)(Arena.ActualWidth / _squareSize);
+            int maxY = (int)(Arena.ActualHeight / _squareSize);
+            int foodX = _rnd.Next(0, maxX) * _squareSize;
+            int foodY = _rnd.Next(0, maxY) * _squareSize;
 
             foreach (SnekPart bodyPart in _snekParts)
             {
@@ -275,16 +300,16 @@ namespace Snek
             switch (_snekDirection)
             {
                 case SnekDirection.Left:
-                    nextX -= SnekSquareSize;
+                    nextX -= _squareSize;
                     break;
                 case SnekDirection.Right:
-                    nextX += SnekSquareSize;
+                    nextX += _squareSize;
                     break;
                 case SnekDirection.Up:
-                    nextY -= SnekSquareSize;
+                    nextY -= _squareSize;
                     break;
                 case SnekDirection.Down:
-                    nextY += SnekSquareSize;
+                    nextY += _squareSize;
                     break;
             }
 
@@ -303,8 +328,15 @@ namespace Snek
         {
             PlaySound();
             _snekLength++;
-            _currentScore++;
-            int timerInterval = Math.Max(SnekSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (_currentScore * 2));
+
+            if (_currentScore < 8)
+                _currentScore++;
+            else if (_currentScore < 15)
+                _currentScore += 3;
+            else
+                _currentScore += 6;
+
+            int timerInterval = Math.Max(_snekSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (_currentScore * 2));
             gameTickTimer.Interval = TimeSpan.FromMilliseconds(timerInterval);
             Arena.Children.Remove(_snekFood);
             DrawFood();
@@ -320,12 +352,11 @@ namespace Snek
         #region Game State
         private void StartNewGame()
         {
+            gameMode.Visibility = Visibility.Collapsed;
             LoadSound("GameStartSoundEffect.wav");
             PlaySound();
             LoadSound("EatSoundEffect.wav");
 
-            bdrWelcomeMessage.Visibility = Visibility.Collapsed;
-            bdrHighscoreList.Visibility = Visibility.Collapsed;
             bdrEndOfGame.Visibility = Visibility.Collapsed;
 
             // Remove potential dead snek parts and leftover food...
@@ -342,8 +373,8 @@ namespace Snek
             _currentScore = 0;
             _snekLength = SnekStartLength;
             _snekDirection = SnekDirection.Right;
-            _snekParts.Add(new SnekPart() { Position = new Point(SnekSquareSize * 5, SnekSquareSize * 5) });
-            gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnekStartSpeed);
+            _snekParts.Add(new SnekPart() { Position = new Point(_squareSize * 5, _squareSize * 5) });
+            gameTickTimer.Interval = TimeSpan.FromMilliseconds(_snekStartSpeed);
 
             // Draw the snek again and some new food...
             DrawSnek();
@@ -390,25 +421,22 @@ namespace Snek
             if (!isNewHighscore)
             {
                 tbFinalScore.Text = _currentScore.ToString();
-                bdrEndOfGame.Visibility = Visibility.Visible;
+                gameMode.Visibility = Visibility.Visible;
             }
             LoadSound("GameOverSoundEffect.wav");
             PlaySound();
-        } 
+        }
         #endregion
 
         #region Sound
         SoundPlayer player = new SoundPlayer();
         public void LoadSound(string path)
         {
-
             player.SoundLocation = path;
             player.Load();
         }
-        public void PlaySound()
-        {
-            player.Play();
-        } 
+        public void PlaySound() => player.Play();
         #endregion
+
     }
 }
