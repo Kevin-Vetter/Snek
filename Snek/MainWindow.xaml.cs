@@ -129,6 +129,9 @@ namespace Snek
                     if (snekDirection != SnekDirection.Left)
                         snekDirection = SnekDirection.Right;
                     break;
+                case Key.P:
+                    PauseGame();
+                    break;
                 case Key.Space:
                     if (!txtPlayerName.IsFocused)
                     {
@@ -140,6 +143,24 @@ namespace Snek
             if (snekDirection != originalsnekDirection && gameTickTimer.IsEnabled)
                 MoveSnek();
         }
+
+        private void PauseGame()
+        {
+            if (!txtPlayerName.IsFocused)
+            {
+                if (pauseScreen.Visibility == Visibility.Hidden)
+                {
+                    pauseScreen.Visibility = Visibility.Visible;
+                    gameTickTimer.IsEnabled = false;
+                }
+                else
+                {
+                    pauseScreen.Visibility = Visibility.Hidden;
+                    gameTickTimer.IsEnabled = true;
+                }
+            }
+        }
+
         private void Window_ContentRendered(object sender, EventArgs e)
         {
             DrawArena();
@@ -382,7 +403,7 @@ namespace Snek
             bool isNewHighscore = false;
             if (currentScore > 0)
             {
-                int lowestHighscore = (this.HighscoreList.Count > 0 ? this.HighscoreList.Min(x =>x.Score) : 0);
+                int lowestHighscore = (this.HighscoreList.Count > 0 ? this.HighscoreList.Min(x => x.Score) : 0);
                 if ((currentScore >= lowestHighscore) || (this.HighscoreList.Count < MaxHighscoreListEntryCount))
                 {
                     bdrNewHighscore.Visibility = Visibility.Visible;
@@ -407,8 +428,7 @@ namespace Snek
             player.SoundLocation = path;
             player.Load();
         }
-
-        public async void PlaySound()
+        public void PlaySound()
         {
             player.Play();
         }

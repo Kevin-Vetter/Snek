@@ -51,6 +51,13 @@
         </Grid>
         <Border BorderBrush="ForestGreen" BorderThickness="5">
             <Canvas Name="Arena" ClipToBounds="True" Width="400" Height="400">
+                <Grid Name="pauseScreen" Visibility="Hidden" Panel.ZIndex="1">
+                    <Canvas  Background="#000" Opacity="0.7" Width="400" Height="400"/>
+                    <TextBlock TextAlignment="Center" Foreground="White" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        Game has been paused...<LineBreak/>
+                        M2 or P To Resume
+                    </TextBlock>
+                </Grid>
                 <Border BorderBrush="Silver" BorderThickness="2" Width="300" Height="320" Canvas.Left="50" Canvas.Top="50" Name="bdrWelcomeMessage" Panel.ZIndex="1">
                     <StackPanel Orientation="Vertical" Background="AliceBlue">
                         <TextBlock FontWeight="Bold" FontSize="50" HorizontalAlignment="Center" Margin="0,20,0,0">Snek™</TextBlock>
@@ -80,7 +87,7 @@
                     <StackPanel Orientation="Vertical" Background="AliceBlue">
                         <TextBlock HorizontalAlignment="Center" FontSize="34" FontWeight="Bold" Margin="20">New Highscore!</TextBlock>
                         <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" FontSize="16">  
-        Congratulations - you made it into the snek highscore list! Please enter your name below...
+        Congratulations - you made it into the snek™ highscore list! Please enter your name below...
                         </TextBlock>
                         <TextBox Name="txtPlayerName" FontSize="28" FontWeight="Bold" MaxLength="8" Margin="20" HorizontalContentAlignment="Center"></TextBox>
                         <Button Name="btnAddToHighscoreList" FontSize="16" HorizontalAlignment="Center" Click="BtnAddToHighscoreList_Click" Padding="10,5">Add to highscore list</Button>
