@@ -57,6 +57,24 @@ namespace Snek
         public ObservableCollection<SnekHighScore> HighScoreList { get; set; }
 
         #region Events
+        /// <summary>
+        /// Triggers when the close button in leaderboard is cliked
+        /// </summary>
+        private void BtnCloseLeaderboard_Click(object sender, RoutedEventArgs e) => bdrHighscoreList.Visibility = Visibility.Collapsed;
+
+        /// <summary>
+        /// Triggers when the clear button in leaderboard is cliked
+        /// </summary>
+        private void BtnClearLeaderboard_Click(object sender, RoutedEventArgs e) => dataStream.ClearHighscoreList();
+
+        /// <summary>
+        /// Triggers when the close button of the window is clicked
+        /// </summary>
+        private void BtnClose_Click(object sender, RoutedEventArgs e) => this.Close();
+
+        /// <summary>
+        /// Triggers when the add highscore button in new highscore is cliked
+        /// </summary>
         private void BtnAddToHighscoreList_Click(object sender, RoutedEventArgs e)
         {
             int newIndex = 0;
@@ -84,28 +102,19 @@ namespace Snek
             bdrHighscoreList.Visibility = Visibility.Visible;
             gameMode.Visibility = Visibility.Visible;
         }
+
+        /// <summary>
+        /// Triggers when the leaderboard button in menu is cliked
+        /// </summary>
         private void BtnShowHighscoreList_Click(object sender, RoutedEventArgs e)
         {
             bdrHighscoreList.Visibility = Visibility.Visible;
         }
-        private void BtnShowControls_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Use WASD or The Arrow keys to control the green snek™.\nMake it eat the red apples, but be sure not to crash into the walls or the tail of the snek™!", "How to play snek™", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        private void BtnChooseGameMode_Click(object sender, RoutedEventArgs e)
-        {
-            menu.Visibility = Visibility.Collapsed;
-            gameMode.Visibility = Visibility.Visible;
-        }
-        public void BtnDifficultyEasy_Click(object sender, RoutedEventArgs e)
-        {
-            _snekSpeedThreshold = 150;
-            _squareSize = 40;
-            _snekStartSpeed = 300;
-            DrawArena();
-            StartNewGame();
-        }
-        public void BtnDifficultyNormal_Click(object sender, RoutedEventArgs e)
+
+        /// <summary>
+        /// Triggers when the normal button in choose difficulty is cliked
+        /// </summary>
+        private void BtnDifficultyNormal_Click(object sender, RoutedEventArgs e)
         {
             _snekSpeedThreshold = 100;
             _squareSize = 20;
@@ -113,7 +122,37 @@ namespace Snek
             DrawArena();
             StartNewGame();
         }
-        public void BtnDifficultyHard_Click(object sender, RoutedEventArgs e)
+
+        /// <summary>
+        /// Triggers every time the timer ticks
+        /// </summary>
+        private void GameTickTimer_Tick(object sender, EventArgs e) => MoveSnek();
+
+        /// <summary>
+        /// Triggers when the play button in menu is cliked
+        /// </summary>
+        private void BtnChooseGameMode_Click(object sender, RoutedEventArgs e)
+        {
+            menu.Visibility = Visibility.Collapsed;
+            gameMode.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Triggers when the easy button in choose difficulty is cliked
+        /// </summary>
+        private void BtnDifficultyEasy_Click(object sender, RoutedEventArgs e)
+        {
+            _snekSpeedThreshold = 150;
+            _squareSize = 40;
+            _snekStartSpeed = 300;
+            DrawArena();
+            StartNewGame();
+        }
+
+        /// <summary>
+        ///  Triggers when the hard button in choose difficulty is cliked
+        /// </summary>
+        private void BtnDifficultyHard_Click(object sender, RoutedEventArgs e)
         {
             _snekSpeedThreshold = 50;
             _squareSize = 10;
@@ -121,10 +160,39 @@ namespace Snek
             DrawArena();
             StartNewGame();
         }
-        public void BtnClearLeaderboard_Click(object sender, RoutedEventArgs e) => dataStream.ClearHighscoreList();
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e) => this.DragMove();
+
+        /// <summary>
+        /// Triggers when the How to Play button in menu is cliked
+        /// </summary>
+        private void BtnShowControls_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Use WASD or The Arrow keys to control the green snek™.\nMake it eat the red apples, but be sure not to crash into the walls or the tail of the snek™!\nUse space to reset", "How to play snek™", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        /// <summary>
+        /// Triggers when you hold mouse_1 on the window
+        /// </summary>
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                this.DragMove();
+            }
+            catch (InvalidOperationException)
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Triggers when content has finished rendering
+        /// </summary>
         private void Window_ContentRendered(object sender, EventArgs e) => DrawArena();
-      
+
+
+        /// <summary>
+        /// Triggers when you let go of a button on the keyboard
+        /// </summary>
         private void Window_OnKeyClickUp(object sender, KeyEventArgs e)
         {
             SnekDirection originalsnekDirection = _snekDirection;
@@ -161,14 +229,12 @@ namespace Snek
             if (_snekDirection != originalsnekDirection && gameTickTimer.IsEnabled)
                 MoveSnek();
         }
-        private void BtnClose_Click(object sender, RoutedEventArgs e) => this.Close();
-
-        private void btnCloseLeaderboard_Click(object sender, RoutedEventArgs e) => bdrHighscoreList.Visibility = Visibility.Collapsed;
-        private void GameTickTimer_Tick(object sender, EventArgs e) => MoveSnek();
-
         #endregion
 
         #region Draw
+        /// <summary>
+        /// Draws the games play arena
+        /// </summary>
         private void DrawArena()
         {
             bool backgroundDrawn = false;
@@ -205,6 +271,10 @@ namespace Snek
                 }
             }
         }
+
+        /// <summary>
+        /// Draws a piece of snek food
+        /// </summary>
         private void DrawFood()
         {
             Point foodPosition = GetNextFoodPosition();
@@ -218,6 +288,10 @@ namespace Snek
             Canvas.SetTop(_snekFood, foodPosition.Y);
             Canvas.SetLeft(_snekFood, foodPosition.X);
         }
+
+        /// <summary>
+        /// Draws the snek itself
+        /// </summary>
         private void DrawSnek()
         {
             foreach (SnekPart bodyPart in _snekParts)
@@ -239,6 +313,10 @@ namespace Snek
         #endregion
 
         #region MISC
+        /// <summary>
+        /// Calculates the next position for snek food
+        /// </summary>
+        /// <returns>Point for the food</returns>
         private Point GetNextFoodPosition()
         {
             int maxX = (int)(Arena.ActualWidth / _squareSize);
@@ -254,6 +332,10 @@ namespace Snek
 
             return new Point(foodX, foodY);
         }
+
+        /// <summary>
+        /// Checks if the snek has hit something it should not have
+        /// </summary>
         private void CollisionCheck()
         {
             SnekPart snekHead = _snekParts[_snekParts.Count - 1];
@@ -276,6 +358,10 @@ namespace Snek
                     EndGame();
             }
         }
+
+        /// <summary>
+        /// Move the snek in the direction it is facing
+        /// </summary>
         private void MoveSnek()
         {
             // Remove the last part of the snek, in preparation of the new part added below  
@@ -324,6 +410,10 @@ namespace Snek
             // We'll get to this later...  
             CollisionCheck();
         }
+
+        /// <summary>
+        /// Snek eats a piece of food
+        /// </summary>
         private void EatFood()
         {
             PlaySound();
@@ -342,6 +432,10 @@ namespace Snek
             DrawFood();
             UpdateGameHeader();
         }
+
+        /// <summary>
+        /// Updates the score and speed
+        /// </summary>
         private void UpdateGameHeader()
         {
             this.tbStatusScore.Text = _currentScore.ToString();
@@ -350,6 +444,9 @@ namespace Snek
         #endregion
 
         #region Game State
+        /// <summary>
+        /// Starts a new game of snek
+        /// </summary>
         private void StartNewGame()
         {
             gameMode.Visibility = Visibility.Collapsed;
@@ -387,6 +484,10 @@ namespace Snek
             gameTickTimer.IsEnabled = true;
             _gameRunning = true;
         }
+
+        /// <summary>
+        /// Pauses the snek game
+        /// </summary>
         private void PauseGame()
         {
             if (!txtPlayerName.IsFocused && _gameRunning)
@@ -403,6 +504,10 @@ namespace Snek
                 }
             }
         }
+
+        /// <summary>
+        /// Ends the snek game
+        /// </summary>
         private void EndGame()
         {
             _gameRunning = false;
@@ -430,11 +535,19 @@ namespace Snek
 
         #region Sound
         SoundPlayer player = new SoundPlayer();
+        /// <summary>
+        /// Loads the sound of the specifed path
+        /// </summary>
+        /// <param name="path"></param>
         public void LoadSound(string path)
         {
             player.SoundLocation = path;
             player.Load();
         }
+
+        /// <summary>
+        /// Plays the sound currently loaded
+        /// </summary>
         public void PlaySound() => player.Play();
         #endregion
 

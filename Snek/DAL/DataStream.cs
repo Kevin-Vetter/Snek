@@ -18,10 +18,18 @@ namespace Snek.DAL
         }
         private ObservableCollection<SnekHighScore> _highScoreList;
 
+        /// <summary>
+        /// Gets High Score List
+        /// </summary>
+        /// <returns>Returns ObservableCollection<SnekHighScore></returns>
         public ObservableCollection<SnekHighScore> GetHighScoreList()
         {
             return _highScoreList;
         }
+
+        /// <summary>
+        /// Saves the High Score List
+        /// </summary>
         public void SaveHighscoreList()
         {
             XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<SnekHighScore>));
@@ -30,6 +38,10 @@ namespace Snek.DAL
                 serializer.Serialize(writer, _highScoreList);
             }
         }
+
+        /// <summary>
+        /// Loads the High Score List
+        /// </summary>
         public void LoadHighscoreList()
         {
             if (File.Exists("snek_highscorelist.xml"))
@@ -45,6 +57,9 @@ namespace Snek.DAL
             }
         }
 
+        /// <summary>
+        /// Clears the High Score List
+        /// </summary>
         public void ClearHighscoreList() => _highScoreList.Clear();
     }
 }

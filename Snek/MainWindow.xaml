@@ -96,7 +96,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Background="Transparent" Width="100" Foreground="#006300" FontWeight="Bold" FontSize="20" Click="btnCloseLeaderboard_Click" Padding="2" Margin="0,2,0,0">Close</Button>
+                        <Button Background="Transparent" Width="100" Foreground="#006300" FontWeight="Bold" FontSize="20" Click="BtnCloseLeaderboard_Click" Padding="2" Margin="0,2,0,0">Close</Button>
                         <Button Background="Transparent" Width="100" Foreground="#7F0000" FontWeight="Bold" FontSize="20" Click="BtnClearLeaderboard_Click" Padding="2" Margin="0,2,0,0">Clear</Button>
                     </StackPanel>
                 </Border>
