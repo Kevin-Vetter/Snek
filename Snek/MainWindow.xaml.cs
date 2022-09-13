@@ -1,26 +1,16 @@
-﻿using System.Runtime.CompilerServices;
+﻿#region Usings
 using System.Collections.ObjectModel;
-using System.Windows.Media.Imaging;
 using System.Collections.Generic;
-using System.Windows.Navigation;
-using System.Windows.Documents;
 using System.Windows.Threading;
-using System.Xml.Serialization;
 using System.Windows.Controls;
-using System.Speech.Synthesis;
-using static Snek.MainWindow;
-using System.Threading.Tasks;
 using System.Windows.Shapes;
 using System.Windows.Media;
 using System.Windows.Input;
-using System.Windows.Data;
 using System.Windows;
-using System.Linq;
-using System.IO;
-using System.Text;
-using System.IO;
-using System;
 using System.Media;
+using System.Linq;
+using System; 
+#endregion
 
 namespace Snek
 {
@@ -29,71 +19,66 @@ namespace Snek
     /// </summary>
     public partial class MainWindow : Window
     {
-        private SpeechSynthesizer speechSynthesizer = new SpeechSynthesizer();
-
         private DispatcherTimer gameTickTimer = new DispatcherTimer();
+        DAL.DataStream dataStream;
         public MainWindow()
         {
             InitializeComponent();
+            dataStream = new DAL.DataStream();
             this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            this.DataContext = this;
             gameTickTimer.Tick += GameTickTimer_Tick;
-            LoadHighscoreList();
+            this.DataContext = this;
+            dataStream.LoadHighscoreList();
+            HighScoreList = dataStream.GetHighScoreList();
         }
 
-        private void GameTickTimer_Tick(object sender, EventArgs e)
-        {
-            MoveSnek();
-        }
+        #region Fields
+        private Random _rnd = new Random();
+        private UIElement? _snekFood = null;
+        private SolidColorBrush _foodBrush = Brushes.Red;
+        private SolidColorBrush _snekBodyBrush = Brushes.Green;
+        private SolidColorBrush _snekHeadBrush = Brushes.DarkGreen;
+        private List<SnekPart> _snekParts = new List<SnekPart>();
+        private SnekDirection _snekDirection = SnekDirection.Right;
+        private int _snekLength;
+        private int _currentScore = 0;
+        private bool _gameRunning;
+        #endregion
 
+        #region Const
         const int MaxHighscoreListEntryCount = 5;
-
-        private Random rnd = new Random();
-
-        private UIElement? snekFood = null;
-        private SolidColorBrush foodBrush = Brushes.Red;
-
         const int SnekSquareSize = 20;
         const int SnekStartLength = 3;
         const int SnekStartSpeed = 200;
-        const int SnekSpeedThreshold = 100;
-
-
-        private SolidColorBrush snekBodyBrush = Brushes.Green;
-        private SolidColorBrush snekHeadBrush = Brushes.DarkGreen;
-        private List<SnekPart> snekParts = new List<SnekPart>();
+        const int SnekSpeedThreshold = 100; 
+        #endregion
 
         public enum SnekDirection { Left, Right, Up, Down };
-        private SnekDirection snekDirection = SnekDirection.Right;
-        private int snekLength;
-
-        private int currentScore = 0;
-
-        public ObservableCollection<SnekHighscore> HighscoreList
-        {
-            get; set;
-        } = new ObservableCollection<SnekHighscore>();
+        public ObservableCollection<SnekHighScore> HighScoreList { get; set; }
+        
+        #region Events
         private void BtnAddToHighscoreList_Click(object sender, RoutedEventArgs e)
         {
             int newIndex = 0;
             // Where should the new entry be inserted?
-            if ((this.HighscoreList.Count > 0) && (currentScore < this.HighscoreList.Max(x => x.Score)))
+            if ((this.HighScoreList.Count > 0) && (_currentScore < this.HighScoreList.Max(x => x.Score)))
             {
-                SnekHighscore justAbove = this.HighscoreList.OrderByDescending(x => x.Score).First(x => x.Score >= currentScore);
+                SnekHighScore justAbove = this.HighScoreList.OrderByDescending(x => x.Score).First(x => x.Score >= _currentScore);
                 if (justAbove != null)
-                    newIndex = this.HighscoreList.IndexOf(justAbove) + 1;
+                    newIndex = this.HighScoreList.IndexOf(justAbove) + 1;
             }
             // Create & insert the new entry
-            this.HighscoreList.Insert(newIndex, new SnekHighscore()
+            this.HighScoreList.Insert(newIndex, new SnekHighScore()
             {
                 PlayerName = txtPlayerName.Text,
-                Score = currentScore
+                Score = _currentScore
             });
             // Make sure that the amount of entries does not exceed the maximum
-            while (this.HighscoreList.Count > MaxHighscoreListEntryCount)
-                this.HighscoreList.RemoveAt(MaxHighscoreListEntryCount);
+            while (this.HighScoreList.Count > MaxHighscoreListEntryCount)
+                this.HighScoreList.RemoveAt(MaxHighscoreListEntryCount);
 
-            SaveHighscoreList();
+            dataStream.SaveHighscoreList();
+            HighScoreList = dataStream.GetHighScoreList();
 
             bdrNewHighscore.Visibility = Visibility.Collapsed;
             bdrHighscoreList.Visibility = Visibility.Visible;
@@ -109,25 +94,25 @@ namespace Snek
         }
         private void Window_OnKeyClickUp(object sender, KeyEventArgs e)
         {
-            SnekDirection originalsnekDirection = snekDirection;
+            SnekDirection originalsnekDirection = _snekDirection;
 
             switch (e.Key)
             {
                 case Key.Up or Key.W:
-                    if (snekDirection != SnekDirection.Down)
-                        snekDirection = SnekDirection.Up;
+                    if (_snekDirection != SnekDirection.Down)
+                        _snekDirection = SnekDirection.Up;
                     break;
                 case Key.Down or Key.S:
-                    if (snekDirection != SnekDirection.Up)
-                        snekDirection = SnekDirection.Down;
+                    if (_snekDirection != SnekDirection.Up)
+                        _snekDirection = SnekDirection.Down;
                     break;
                 case Key.Left or Key.A:
-                    if (snekDirection != SnekDirection.Right)
-                        snekDirection = SnekDirection.Left;
+                    if (_snekDirection != SnekDirection.Right)
+                        _snekDirection = SnekDirection.Left;
                     break;
                 case Key.Right or Key.D:
-                    if (snekDirection != SnekDirection.Left)
-                        snekDirection = SnekDirection.Right;
+                    if (_snekDirection != SnekDirection.Left)
+                        _snekDirection = SnekDirection.Right;
                     break;
                 case Key.P:
                     PauseGame();
@@ -140,27 +125,9 @@ namespace Snek
                     break;
             }
 
-            if (snekDirection != originalsnekDirection && gameTickTimer.IsEnabled)
+            if (_snekDirection != originalsnekDirection && gameTickTimer.IsEnabled)
                 MoveSnek();
         }
-
-        private void PauseGame()
-        {
-            if (!txtPlayerName.IsFocused)
-            {
-                if (pauseScreen.Visibility == Visibility.Hidden)
-                {
-                    pauseScreen.Visibility = Visibility.Visible;
-                    gameTickTimer.IsEnabled = false;
-                }
-                else
-                {
-                    pauseScreen.Visibility = Visibility.Hidden;
-                    gameTickTimer.IsEnabled = true;
-                }
-            }
-        }
-
         private void Window_ContentRendered(object sender, EventArgs e)
         {
             DrawArena();
@@ -170,6 +137,13 @@ namespace Snek
         {
             this.Close();
         }
+        private void GameTickTimer_Tick(object sender, EventArgs e)
+        {
+            MoveSnek();
+        }
+        #endregion
+
+        #region Draw
         private void DrawArena()
         {
             bool backgroundDrawn = false;
@@ -206,65 +180,99 @@ namespace Snek
                 }
             }
         }
-        private void StartNewGame()
+        private void DrawFood()
         {
-            LoadSound("GameStartSoundEffect.wav");
-            PlaySound();
-            LoadSound("EatSoundEffect.wav");
-
-            bdrWelcomeMessage.Visibility = Visibility.Collapsed;
-            bdrHighscoreList.Visibility = Visibility.Collapsed;
-            bdrEndOfGame.Visibility = Visibility.Collapsed;
-
-            // Remove potential dead snek parts and leftover food...
-            foreach (SnekPart bodyPart in snekParts)
+            Point foodPosition = GetNextFoodPosition();
+            _snekFood = new Ellipse()
             {
-                if (bodyPart.UiElement != null)
-                    Arena.Children.Remove(bodyPart.UiElement);
+                Width = SnekSquareSize,
+                Height = SnekSquareSize,
+                Fill = _foodBrush
+            };
+            Arena.Children.Add(_snekFood);
+            Canvas.SetTop(_snekFood, foodPosition.Y);
+            Canvas.SetLeft(_snekFood, foodPosition.X);
+        }
+        private void DrawSnek()
+        {
+            foreach (SnekPart bodyPart in _snekParts)
+            {
+                if (bodyPart.UiElement == null)
+                {
+                    bodyPart.UiElement = new Rectangle()
+                    {
+                        Width = SnekSquareSize,
+                        Height = SnekSquareSize,
+                        Fill = bodyPart.IsHead ? _snekHeadBrush : _snekBodyBrush
+                    };
+                    Arena.Children.Add(bodyPart.UiElement);
+                    Canvas.SetTop(bodyPart.UiElement, bodyPart.Position.Y);
+                    Canvas.SetLeft(bodyPart.UiElement, bodyPart.Position.X);
+                }
             }
-            snekParts.Clear();
-            if (snekFood != null)
-                Arena.Children.Remove(snekFood);
+        }
+        #endregion
 
-            // Reset stuff
-            currentScore = 0;
-            snekLength = SnekStartLength;
-            snekDirection = SnekDirection.Right;
-            snekParts.Add(new SnekPart() { Position = new Point(SnekSquareSize * 5, SnekSquareSize * 5) });
-            gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnekStartSpeed);
+        #region MISC
+        private Point GetNextFoodPosition()
+        {
+            int maxX = (int)(Arena.ActualWidth / SnekSquareSize);
+            int maxY = (int)(Arena.ActualHeight / SnekSquareSize);
+            int foodX = _rnd.Next(0, maxX) * SnekSquareSize;
+            int foodY = _rnd.Next(0, maxY) * SnekSquareSize;
 
-            // Draw the snek again and some new food...
-            DrawSnek();
-            DrawFood();
+            foreach (SnekPart bodyPart in _snekParts)
+            {
+                if ((bodyPart.Position.X == foodX) && (bodyPart.Position.Y == foodY))
+                    return GetNextFoodPosition();
+            }
 
-            // Update status
-            UpdateGameHeader();
+            return new Point(foodX, foodY);
+        }
+        private void CollisionCheck()
+        {
+            SnekPart snekHead = _snekParts[_snekParts.Count - 1];
 
-            // Go!        
-            gameTickTimer.IsEnabled = true;
+            if ((snekHead.Position.X == Canvas.GetLeft(_snekFood)) && (snekHead.Position.Y == Canvas.GetTop(_snekFood)))
+            {
+                EatFood();
+                return;
+            }
+
+            if ((snekHead.Position.Y < 0) || (snekHead.Position.Y >= Arena.ActualHeight) ||
+            (snekHead.Position.X < 0) || (snekHead.Position.X >= Arena.ActualWidth))
+            {
+                EndGame();
+            }
+
+            foreach (SnekPart snekBodyPart in _snekParts.Take(_snekParts.Count - 1))
+            {
+                if ((snekHead.Position.X == snekBodyPart.Position.X) && (snekHead.Position.Y == snekBodyPart.Position.Y))
+                    EndGame();
+            }
         }
         private void MoveSnek()
         {
             // Remove the last part of the snek, in preparation of the new part added below  
-            while (snekParts.Count >= snekLength)
+            while (_snekParts.Count >= _snekLength)
             {
-                Arena.Children.Remove(snekParts[0].UiElement);
-                snekParts.RemoveAt(0);
+                Arena.Children.Remove(_snekParts[0].UiElement);
+                _snekParts.RemoveAt(0);
             }
             // Next up, we'll add a new element to the snek, which will be the (new) head  
             // Therefore, we mark all existing parts as non-head (body) elements and then  
             // we make sure that they use the body brush  
-            foreach (SnekPart bodyPart in snekParts)
+            foreach (SnekPart bodyPart in _snekParts)
             {
-                (bodyPart.UiElement as Rectangle).Fill = snekBodyBrush;
+                (bodyPart.UiElement as Rectangle).Fill = _snekBodyBrush;
                 bodyPart.IsHead = false;
             }
 
             // Determine in which direction to expand the snek, based on the current direction  
-            SnekPart snekHead = snekParts[snekParts.Count - 1];
+            SnekPart snekHead = _snekParts[_snekParts.Count - 1];
             double nextX = snekHead.Position.X;
             double nextY = snekHead.Position.Y;
-            switch (snekDirection)
+            switch (_snekDirection)
             {
                 case SnekDirection.Left:
                     nextX -= SnekSquareSize;
@@ -281,7 +289,7 @@ namespace Snek
             }
 
             // Now add the new head part to our list of snek parts...  
-            snekParts.Add(new SnekPart()
+            _snekParts.Add(new SnekPart()
             {
                 Position = new Point(nextX, nextY),
                 IsHead = true
@@ -291,120 +299,88 @@ namespace Snek
             // We'll get to this later...  
             CollisionCheck();
         }
-        private void DrawSnek()
-        {
-            foreach (SnekPart bodyPart in snekParts)
-            {
-                if (bodyPart.UiElement == null)
-                {
-                    bodyPart.UiElement = new Rectangle()
-                    {
-                        Width = SnekSquareSize,
-                        Height = SnekSquareSize,
-                        Fill = bodyPart.IsHead ? snekHeadBrush : snekBodyBrush
-                    };
-                    Arena.Children.Add(bodyPart.UiElement);
-                    Canvas.SetTop(bodyPart.UiElement, bodyPart.Position.Y);
-                    Canvas.SetLeft(bodyPart.UiElement, bodyPart.Position.X);
-                }
-            }
-        }
-        private Point GetNextFoodPosition()
-        {
-            int maxX = (int)(Arena.ActualWidth / SnekSquareSize);
-            int maxY = (int)(Arena.ActualHeight / SnekSquareSize);
-            int foodX = rnd.Next(0, maxX) * SnekSquareSize;
-            int foodY = rnd.Next(0, maxY) * SnekSquareSize;
-
-            foreach (SnekPart bodyPart in snekParts)
-            {
-                if ((bodyPart.Position.X == foodX) && (bodyPart.Position.Y == foodY))
-                    return GetNextFoodPosition();
-            }
-
-            return new Point(foodX, foodY);
-        }
-        private void DrawFood()
-        {
-            Point foodPosition = GetNextFoodPosition();
-            snekFood = new Ellipse()
-            {
-                Width = SnekSquareSize,
-                Height = SnekSquareSize,
-                Fill = foodBrush
-            };
-            Arena.Children.Add(snekFood);
-            Canvas.SetTop(snekFood, foodPosition.Y);
-            Canvas.SetLeft(snekFood, foodPosition.X);
-        }
-        private void CollisionCheck()
-        {
-            SnekPart snekHead = snekParts[snekParts.Count - 1];
-
-            if ((snekHead.Position.X == Canvas.GetLeft(snekFood)) && (snekHead.Position.Y == Canvas.GetTop(snekFood)))
-            {
-                EatFood();
-                return;
-            }
-
-            if ((snekHead.Position.Y < 0) || (snekHead.Position.Y >= Arena.ActualHeight) ||
-            (snekHead.Position.X < 0) || (snekHead.Position.X >= Arena.ActualWidth))
-            {
-                EndGame();
-            }
-
-            foreach (SnekPart snekBodyPart in snekParts.Take(snekParts.Count - 1))
-            {
-                if ((snekHead.Position.X == snekBodyPart.Position.X) && (snekHead.Position.Y == snekBodyPart.Position.Y))
-                    EndGame();
-            }
-        }
         private void EatFood()
         {
             PlaySound();
-            snekLength++;
-            currentScore++;
-            int timerInterval = Math.Max(SnekSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (currentScore * 2));
+            _snekLength++;
+            _currentScore++;
+            int timerInterval = Math.Max(SnekSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (_currentScore * 2));
             gameTickTimer.Interval = TimeSpan.FromMilliseconds(timerInterval);
-            Arena.Children.Remove(snekFood);
+            Arena.Children.Remove(_snekFood);
             DrawFood();
             UpdateGameHeader();
         }
-        private void SaveHighscoreList()
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<SnekHighscore>));
-            using (Stream writer = new FileStream("snek_highscorelist.xml", FileMode.Create))
-            {
-                serializer.Serialize(writer, this.HighscoreList);
-            }
-        }
         private void UpdateGameHeader()
         {
-            this.tbStatusScore.Text = currentScore.ToString();
+            this.tbStatusScore.Text = _currentScore.ToString();
             this.tbStatusSpeed.Text = gameTickTimer.Interval.TotalMilliseconds.ToString();
         }
-        private void LoadHighscoreList()
+        #endregion
+
+        #region Game State
+        private void StartNewGame()
         {
-            if (File.Exists("snek_highscorelist.xml"))
+            LoadSound("GameStartSoundEffect.wav");
+            PlaySound();
+            LoadSound("EatSoundEffect.wav");
+
+            bdrWelcomeMessage.Visibility = Visibility.Collapsed;
+            bdrHighscoreList.Visibility = Visibility.Collapsed;
+            bdrEndOfGame.Visibility = Visibility.Collapsed;
+
+            // Remove potential dead snek parts and leftover food...
+            foreach (SnekPart bodyPart in _snekParts)
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(List<SnekHighscore>));
-                using (Stream reader = new FileStream("snek_highscorelist.xml", FileMode.Open))
+                if (bodyPart.UiElement != null)
+                    Arena.Children.Remove(bodyPart.UiElement);
+            }
+            _snekParts.Clear();
+            if (_snekFood != null)
+                Arena.Children.Remove(_snekFood);
+
+            // Reset stuff
+            _currentScore = 0;
+            _snekLength = SnekStartLength;
+            _snekDirection = SnekDirection.Right;
+            _snekParts.Add(new SnekPart() { Position = new Point(SnekSquareSize * 5, SnekSquareSize * 5) });
+            gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnekStartSpeed);
+
+            // Draw the snek again and some new food...
+            DrawSnek();
+            DrawFood();
+
+            // Update status
+            UpdateGameHeader();
+
+            // Go!        
+            gameTickTimer.IsEnabled = true;
+            _gameRunning = true;
+        }
+        private void PauseGame()
+        {
+            if (!txtPlayerName.IsFocused && _gameRunning)
+            {
+                if (pauseScreen.Visibility == Visibility.Hidden)
                 {
-                    List<SnekHighscore> tempList = (List<SnekHighscore>)serializer.Deserialize(reader);
-                    this.HighscoreList.Clear();
-                    foreach (var item in tempList.OrderByDescending(x => x.Score))
-                        this.HighscoreList.Add(item);
+                    pauseScreen.Visibility = Visibility.Visible;
+                    gameTickTimer.IsEnabled = false;
+                }
+                else
+                {
+                    pauseScreen.Visibility = Visibility.Hidden;
+                    gameTickTimer.IsEnabled = true;
                 }
             }
         }
         private void EndGame()
         {
+            _gameRunning = false;
             gameTickTimer.IsEnabled = false;
             bool isNewHighscore = false;
-            if (currentScore > 0)
+            if (_currentScore > 0)
             {
-                int lowestHighscore = (this.HighscoreList.Count > 0 ? this.HighscoreList.Min(x => x.Score) : 0);
-                if ((currentScore >= lowestHighscore) || (this.HighscoreList.Count < MaxHighscoreListEntryCount))
+                int lowestHighscore = (this.HighScoreList.Count > 0 ? this.HighScoreList.Min(x => x.Score) : 0);
+                if ((_currentScore >= lowestHighscore) || (this.HighScoreList.Count < MaxHighscoreListEntryCount))
                 {
                     bdrNewHighscore.Visibility = Visibility.Visible;
                     txtPlayerName.Focus();
@@ -413,15 +389,16 @@ namespace Snek
             }
             if (!isNewHighscore)
             {
-                tbFinalScore.Text = currentScore.ToString();
+                tbFinalScore.Text = _currentScore.ToString();
                 bdrEndOfGame.Visibility = Visibility.Visible;
             }
             LoadSound("GameOverSoundEffect.wav");
             PlaySound();
-        }
+        } 
+        #endregion
 
+        #region Sound
         SoundPlayer player = new SoundPlayer();
-
         public void LoadSound(string path)
         {
 
@@ -431,20 +408,7 @@ namespace Snek
         public void PlaySound()
         {
             player.Play();
-        }
+        } 
+        #endregion
     }
-
-    public class SnekPart
-    {
-        public UIElement UiElement { get; set; }
-        public Point Position { get; set; }
-        public bool IsHead { get; set; }
-    }
-}
-
-public class SnekHighscore
-{
-    public string PlayerName { get; set; }
-
-    public int Score { get; set; }
 }
